@@ -3,212 +3,240 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CutForge Studio — Pro Browser Video Editor (YouTube & Reels)</title>
+  <title>CutForge Studio — Multi-Clip MP4 Video Editor</title>
   <link href="https://googleapis.com" rel="stylesheet">
+  <script src="https://unpkg.com"></script>
+  <script src="https://unpkg.com"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-    body { background: #09090b; color: #f4f4f5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-    /* Top Bar & 5-Stage Workflow */
+    body { background: #09090b; color: #f4f4f5; min-height: 100vh; display: flex; flex-direction: column; }
     header {
-      background: #121215; border-bottom: 1px solid #27272a; padding: 10px 20px;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      background: #121215; border-bottom: 1px solid #27272a; padding: 14px 24px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
     }
-    .brand { font-weight: 800; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+    .brand { font-weight: 700; font-size: 18px; }
     .brand span { color: #818cf8; }
-    .workflow-steps { display: flex; gap: 6px; flex-wrap: wrap; }
-    .step-pill {
-      background: #18181b; border: 1px solid #27272a; color: #a1a1aa; padding: 6px 12px;
-      border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
-    }
-    .step-pill.active { background: #4f46e5; color: #fff; border-color: #6366f1; }
-    .top-actions { display: flex; gap: 8px; }
-    .btn {
-      padding: 8px 14px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600;
-      cursor: pointer; transition: 0.15s;
-    }
-    .btn-primary { background: #4f46e5; color: white; }
-    .btn-primary:hover { background: #4338ca; }
-    .btn-secondary { background: #27272a; color: #e4e4e7; }
-    .btn-secondary:hover { background: #3f3f46; }
-    .btn-danger { background: #dc2626; color: white; }
-
-    /* Main Workspace */
-    .workspace { flex: 1; display: grid; grid-template-columns: 330px 1fr 310px; overflow: hidden; }
-    .panel {
-      background: #111114; border-right: 1px solid #27272a; padding: 16px;
-      overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
-    }
-    .panel-right { border-right: none; border-left: 1px solid #27272a; }
-    .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #818cf8; letter-spacing: 0.5px; }
-    .card { background: #18181b; border: 1px solid #27272a; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-
+    .container { max-width: 1100px; width: 94%; margin: 24px auto; display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+    .card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    h2 { font-size: 13px; text-transform: uppercase; color: #818cf8; letter-spacing: 0.5px; }
     label { font-size: 12px; color: #a1a1aa; display: block; margin-bottom: 4px; }
-    input[type="text"], input[type="number"], select, textarea {
+    input, select {
       width: 100%; background: #09090b; border: 1px solid #3f3f46; color: #fff;
-      padding: 8px 10px; border-radius: 7px; font-size: 12px;
+      padding: 9px; border-radius: 8px; font-size: 13px;
     }
-    input[type="range"] { width: 100%; accent-color: #6366f1; }
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-    /* Center Stage (Canvas + Timeline) */
-    .center-stage { display: flex; flex-direction: column; background: #09090b; overflow: hidden; }
-    .canvas-wrap {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      padding: 16px; position: relative; overflow: hidden;
+    .btn {
+      padding: 11px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600;
+      cursor: pointer; background: #4f46e5; color: white; transition: 0.15s;
     }
-    canvas {
-      background: #000; border: 1px solid #27272a; border-radius: 8px;
-      max-width: 100%; max-height: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    .btn:hover:not(:disabled) { background: #4338ca; }
+    .btn:disabled { background: #3f3f46; cursor: not-allowed; opacity: 0.7; }
+    .btn-sm { padding: 5px 9px; font-size: 11px; background: #27272a; border: none; color: #fff; border-radius: 6px; cursor: pointer; }
+    .btn-danger { background: #dc2626; }
+    .clip-list { display: flex; flex-direction: column; gap: 8px; }
+    .clip-row {
+      background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 10px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px;
     }
-    .transport {
-      background: #121215; border-top: 1px solid #27272a; border-bottom: 1px solid #27272a;
-      padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .timeline {
-      height: 145px; background: #111114; padding: 12px 16px; overflow-x: auto;
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    .clip-track { display: flex; gap: 8px; align-items: center; min-height: 54px; }
-    .clip-item {
-      background: #1e1b4b; border: 1px solid #4f46e5; border-radius: 8px; padding: 8px 12px;
-      min-width: 150px; cursor: pointer; font-size: 12px; position: relative;
-    }
-    .clip-item.selected { background: #312e81; border-color: #a5b4fc; box-shadow: 0 0 0 2px rgba(129,140,248,0.4); }
-    .clip-meta { font-size: 10px; color: #a5b4fc; margin-top: 3px; }
-    .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #27272a; color: #d4d4d8; }
-    #statusBar { font-size: 12px; color: #a5b4fc; }
-
-    @media (max-width: 1024px) {
-      body { height: auto; overflow: auto; }
-      .workspace { grid-template-columns: 1fr; }
-    }
+    video { width: 100%; border-radius: 10px; background: #000; border: 1px solid #27272a; max-height: 460px; }
+    #status { font-size: 13px; color: #a5b4fc; background: #1e1b4b; padding: 10px 14px; border-radius: 8px; border: 1px solid #3730a3; }
+    @media (max-width: 850px) { .container { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="brand">🎬 Cut<span>Forge</span> Studio</div>
-  <div class="workflow-steps">
-    <button class="step-pill active" onclick="focusStep(1, this)">1. Raw Footage</button>
-    <button class="step-pill" onclick="focusStep(2, this)">2. Rough Cut & Club</button>
-    <button class="step-pill" onclick="focusStep(3, this)">3. Audio, Captions & VFX</button>
-    <button class="step-pill" onclick="focusStep(4, this)">4. Color Grade</button>
-    <button class="step-pill" onclick="focusStep(5, this)">5. Export</button>
-  </div>
-  <div class="top-actions">
-    <button class="btn btn-secondary" onclick="captureThumbnail()">📸 Save Thumbnail</button>
-    <button class="btn btn-primary" id="exportBtn" onclick="exportVideo()">⬇ Export Video</button>
-  </div>
+  <div class="brand">🎬 Cut<span>Forge</span> — True Multi-Clip MP4 Merger & Editor</div>
+  <button class="btn" id="renderBtn" onclick="clubAndExport()" disabled>⬇ Club & Export Final MP4</button>
 </header>
 
-<div class="workspace">
-  <!-- LEFT PANEL: MEDIA, FORMAT & ROUGH CUT -->
-  <div class="panel">
-    <div class="section-title">1. Format & Platform Preset</div>
+<div class="container">
+  <!-- LEFT CONTROLS -->
+  <div style="display:flex; flex-direction:column; gap:16px;">
     <div class="card">
-      <label>Target Aspect Ratio & Resolution</label>
-      <select id="aspectPreset" onchange="changeAspect()">
-        <option value="16:9">YouTube Long-Form (16:9 • 1920×1080)</option>
-        <option value="9:16">Reels / Shorts / TikTok (9:16 • 1080×1920)</option>
-      </select>
-      <div class="row-2">
-        <div>
-          <label>Hook Timer (sec)</label>
-          <input type="number" id="hookEnd" value="5" min="1" max="30" />
-        </div>
-        <div>
-          <label>Outro CTA (last sec)</label>
-          <input type="number" id="outroDur" value="4" min="0" max="15" />
-        </div>
-      </div>
+      <h2>1. Add Multiple Videos to Club</h2>
+      <label>Select 2 or more videos (or add one by one)</label>
+      <input type="file" id="filePicker" accept="video/*" multiple />
+      <div class="clip-list" id="clipList"></div>
     </div>
 
-    <div class="section-title">2. Club Clips & Rough Cut</div>
     <div class="card">
-      <label>Add Video Clips (Select multiple to club together)</label>
-      <input type="file" id="videoInput" accept="video/*" multiple />
-      <div id="clipControls" style="display:none; flex-direction:column; gap:8px;">
-        <div class="row-2">
-          <div>
-            <label>Trim Start (s)</label>
-            <input type="number" id="trimStart" step="0.1" min="0" onchange="updateSelectedClip()" />
-          </div>
-          <div>
-            <label>Trim End (s)</label>
-            <input type="number" id="trimEnd" step="0.1" min="0.1" onchange="updateSelectedClip()" />
-          </div>
-        </div>
-        <div class="row-2">
-          <div>
-            <label>Speed Ramp</label>
-            <select id="clipSpeed" onchange="updateSelectedClip()">
-              <option value="0.5">0.5x Slow-Mo</option>
-              <option value="1" selected>1.0x Normal</option>
-              <option value="1.25">1.25x Crisp</option>
-              <option value="1.5">1.5x Fast</option>
-              <option value="2">2.0x Hyper</option>
-            </select>
-          </div>
-          <div>
-            <label>Motion / Zoom</label>
-            <select id="clipMotion" onchange="updateSelectedClip()">
-              <option value="none">Static</option>
-              <option value="zoomIn">Smooth Zoom In</option>
-              <option value="zoomOut">Smooth Zoom Out</option>
-              <option value="punch">Hook Punch Zoom</option>
-            </select>
-          </div>
-        </div>
-        <div class="row-2">
-          <button class="btn btn-secondary" onclick="moveClip(-1)">⬅ Move Left</button>
-          <button class="btn btn-secondary" onclick="moveClip(1)">Move Right ➡</button>
-        </div>
-        <button class="btn btn-danger" onclick="removeSelectedClip()">🗑 Cut / Delete Clip</button>
+      <h2>2. Format, Color & Audio Settings</h2>
+      <div>
+        <label>Output Resolution & Aspect Ratio</label>
+        <select id="resolution">
+          <option value="1280:720">YouTube 16:9 (1280×720 HD)</option>
+          <option value="1920:1080">YouTube 16:9 (1920×1080 Full HD)</option>
+          <option value="720:1280">Reels / Shorts 9:16 (720×1280)</option>
+          <option value="1080:1920">Reels / Shorts 9:16 (1080×1920)</option>
+        </select>
       </div>
-    </div>
-
-    <div class="section-title">B-Roll / Logo Image Overlay</div>
-    <div class="card">
-      <label>Upload B-Roll Image or Channel Watermark</label>
-      <input type="file" id="brollInput" accept="image/*" />
-      <label>B-Roll Mode</label>
-      <select id="brollMode">
-        <option value="none">Hidden</option>
-        <option value="pip">Corner Picture-in-Picture / Logo</option>
-        <option value="full">Full-Screen B-Roll Cutaway</option>
-      </select>
+      <div>
+        <label>Playback Speed</label>
+        <select id="speed">
+          <option value="1">1.0x Normal Speed</option>
+          <option value="0.75">0.75x Smooth Slow-Mo</option>
+          <option value="1.25">1.25x Crisp Creator Pace</option>
+          <option value="1.5">1.5x Fast Recap</option>
+        </select>
+      </div>
+      <div>
+        <label>Color Grade Preset</label>
+        <select id="colorGrade">
+          <option value="none">Original Colors</option>
+          <option value="eq=contrast=1.18:saturation=1.25">High-Retention Vibrant</option>
+          <option value="eq=contrast=1.22:brightness=-0.03:saturation=1.15">Cinematic Contrast</option>
+          <option value="hue=s=0">Noir Black & White</option>
+        </select>
+      </div>
+      <div>
+        <label>Optional Background Music (MP3/WAV)</label>
+        <input type="file" id="musicPicker" accept="audio/*" />
+      </div>
     </div>
   </div>
 
-  <!-- CENTER PANEL: LIVE CANVAS & MULTI-CLIP TIMELINE -->
-  <div class="center-stage">
-    <div class="canvas-wrap">
-      <canvas id="stageCanvas" width="1280" height="720"></canvas>
-    </div>
-
-    <div class="transport">
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button class="btn btn-primary" id="playPauseBtn" onclick="togglePlay()">▶ Play Timeline</button>
-        <button class="btn btn-secondary" onclick="restartTimeline()">⏮ Restart</button>
-      </div>
-      <div id="statusBar">Upload 1 or more video clips on the left to start editing.</div>
-      <span class="badge" id="formatBadge">16:9 HD</span>
-    </div>
-
-    <div class="timeline">
-      <div style="display:flex; justify-content:space-between; font-size:11px; color:#a1a1aa;">
-        <span>TIMELINE SEQUENCE (Click any clip to trim, reorder, or add zoom)</span>
-        <span id="totalDurationLabel">Total: 0.0s</span>
-      </div>
-      <div class="clip-track" id="clipTrack"></div>
+  <!-- RIGHT PREVIEW & OUTPUT -->
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <div id="status">Upload your video clips on the left to club them into a single MP4.</div>
+    <div class="card">
+      <h2>Final Export Preview</h2>
+      <video id="outputPlayer" controls></video>
     </div>
   </div>
+</div>
 
-  <!-- RIGHT PANEL: CAPTIONS, AUDIO MIXER & COLOR GRADING -->
-  <div class="panel panel-right">
-    <div class="section-title">3. Captions, Hooks & CTA</div>
-    <div class="card">
-      <label>Hook Banner Text (Shown during Hook sec)</label>
-      <input type="text" id="hookText" placeholder="e.g., WAIT UNTIL THE END! 🔥" />
-      <label>Subtitle / Highlighted Caption</label>
+<script>
+  const { FFmpeg } = FFmpegWASM;
+  const { fetchFile } = FFmpegUtil;
+  const ffmpeg = new FFmpeg();
+
+  let clipFiles = [];
+  let musicFile = null;
+
+  document.getElementById('filePicker').addEventListener('change', (e) => {
+    const newlyAdded = Array.from(e.target.files);
+    clipFiles.push(...newlyAdded);
+    e.target.value = '';
+    renderClipList();
+  });
+
+  document.getElementById('musicPicker').addEventListener('change', (e) => {
+    musicFile = e.target.files[0] || null;
+  });
+
+  function renderClipList() {
+    const list = document.getElementById('clipList');
+    list.innerHTML = '';
+    clipFiles.forEach((file, idx) => {
+      const row = document.createElement('div');
+      row.className = 'clip-row';
+      row.innerHTML = `
+        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:165px;">
+          <strong>#${idx + 1}</strong> ${file.name}
+        </span>
+        <div style="display:flex; gap:4px;">
+          <button class="btn-sm" onclick="moveClip(${idx}, -1)">↑</button>
+          <button class="btn-sm" onclick="moveClip(${idx}, 1)">↓</button>
+          <button class="btn-sm btn-danger" onclick="removeClip(${idx})">✕</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+    document.getElementById('renderBtn').disabled = clipFiles.length === 0;
+  }
+
+  function moveClip(idx, dir) {
+    const target = idx + dir;
+    if (target < 0 || target >= clipFiles.length) return;
+    [clipFiles[idx], clipFiles[target]] = [clipFiles[target], clipFiles[idx]];
+    renderClipList();
+  }
+
+  function removeClip(idx) {
+    clipFiles.splice(idx, 1);
+    renderClipList();
+  }
+
+  async function clubAndExport() {
+    if (!clipFiles.length) return;
+    const btn = document.getElementById('renderBtn');
+    const status = document.getElementById('status');
+    btn.disabled = true;
+
+    try {
+      if (!ffmpeg.loaded) {
+        status.textContent = 'Loading FFmpeg video engine (one-time ~25MB download)...';
+        await ffmpeg.load({
+          coreURL: 'https://unpkg.com',
+        });
+      }
+
+      const [targetW, targetH] = document.getElementById('resolution').value.split(':');
+      const speed = parseFloat(document.getElementById('speed').value);
+      const colorGrade = document.getElementById('colorGrade').value;
+
+      // Normalize every clip to identical resolution, FPS, and audio sample rate so clubbing never fails
+      const normalizedNames = [];
+      for (let i = 0; i < clipFiles.length; i++) {
+        status.textContent = `Processing & matching clip ${i + 1} of ${clipFiles.length}...`;
+        const rawName = `raw_${i}.mp4`;
+        const normName = `norm_${i}.mp4`;
+        await ffmpeg.writeFile(rawName, await fetchFile(clipFiles[i]));
+
+        let vf = `scale=${targetW}:${targetH}:force_original_aspect_ratio=decrease,pad=${targetW}:${targetH}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30`;
+        if (speed !== 1) vf += `,setpts=${(1 / speed).toFixed(3)}*PTS`;
+        if (colorGrade !== 'none') vf += `,${colorGrade}`;
+
+        const af = speed !== 1 ? `atempo=${speed}` : `anull`;
+
+        await ffmpeg.exec([
+          '-i', rawName,
+          '-vf', vf,
+          '-af', af,
+          '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23',
+          '-c:a', 'aac', '-ar', '44100', '-ac', '2',
+          normName
+        ]);
+        normalizedNames.push(normName);
+      }
+
+      // Club all normalized clips together using FFmpeg concat demuxer
+      status.textContent = 'Clubbing all clips into final MP4...';
+      const concatList = normalizedNames.map(n => `file '${n}'`).join('\n');
+      await ffmpeg.writeFile('list.txt', concatList);
+
+      await ffmpeg.exec([
+        '-f', 'concat', '-safe', '0',
+        '-i', 'list.txt',
+        '-c', 'copy',
+        'clubbed.mp4'
+      ]);
+
+      let finalFile = 'clubbed.mp4';
+
+      // Mix background music if uploaded
+      if (musicFile) {
+        status.textContent = 'Mixing background music with video audio...';
+        await ffmpeg.writeFile('bgm.mp3', await fetchFile(musicFile));
+        await ffmpeg.exec([
+          '-i', 'clubbed.mp4',
+          '-stream_loop', '-1', '-i', 'bgm.mp3',
+          '-filter_complex', '[0:a]volume=1.0[a1];[1:a]volume=0.22[a2];[a1][a2]amix=inputs=2:duration=first[aout]',
+          '-map', '0:v', '-map', '[aout]',
+          '-c:v', 'copy', '-c:a', 'aac',
+          'final_with_music.mp4'
+        ]);
+        finalFile = 'final_with_music.mp4';
+      }
+
+      const data = await ffmpeg.readFile(finalFile);
+      const mp4Url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+
+      const player = document.getElementById('outputPlayer');
+      player.src = mp4Url;
+
+      const a = document.createElement('a');
+      a.href = mp4Url;
+      a.download = 'CutForge-Clubbed-Video.mp4';
+      a.click();
+
